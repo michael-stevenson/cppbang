@@ -1,0 +1,4 @@
+cppbang
+=======
+
+c++ script wrapper
