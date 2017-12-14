@@ -1,7 +1,25 @@
-tmp=`mktemp ${PWD}/bang.XXXXXXXXXXX`
-chmod 777 ${tmp}
-tail -n +2 "$1" | g++ -std=c++0x -o "$tmp" -xc++ - 2>&1 | sed s/\<stdin\>/${1##*/}/g
-shift
-time "$tmp" "$@"; result=$?
-rm -rf "$tmp"
-exit $result
+#!/bin/zsh
+
+COMPILER="/usr/lib/llvm/5/bin/clang++"
+SWITCHES=(-x c++ -std=c++17 -O3)
+
+TEMP=`mktemp`
+if [ $? -ne 0 ]; then
+	exit
+fi
+
+trap "rm $TEMP" EXIT
+
+echo -n "//" >> $TEMP
+cat $1 >> $TEMP
+
+set -o pipefail
+executable="${TEMP}.cppbang"
+$COMPILER $SWITCHES -o ${executable} $TEMP |& sed s:$TEMP:$1:g
+
+if [ $? -ne 0 ]; then
+	exit
+fi
+
+trap "rm $TEMP; rm $executable" EXIT
+exec ${executable}
